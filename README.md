@@ -6,4 +6,4 @@ n body sims that take into account
 - [ ] fluid laws
 - [ ] electromagnetism
 
-[n body motion](n_bodies.gif)
+![n body motion](n_bodies.png)
