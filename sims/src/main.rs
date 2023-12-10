@@ -1,8 +1,13 @@
 use rand::Rng;
 use rayon::prelude::*;
+use plotters::prelude::*;
+use tqdm::tqdm;
 
 const GRAVITATIONAL_CONSTANT: f64 = 6.67408e-11; // m^3 kg^-1 s^-2
-const TIME_STEP: f64 = 1.0; // s (for now)
+const TIME_STEP: f64 = 0.001; // s (for now)
+const MASS_EARTH: f64 = 5.972e24; // kg
+
+const OUT_FILE_NAME: &str = "/home/eddieberman/gravi-magnetohydrodynamics/sims/src/plotters-doc-data/3d-plot2.gif";
 
 fn distance(particle_a: &Particle, particle_b: &Particle) -> f64 {
     let distance_vector = [
@@ -131,11 +136,13 @@ fn force_gravity(particle: &mut Particle, n_bodies: Vec<&Particle>) {
 
 fn force_fluid(particle: &mut Particle, n_bodies: Vec<&Particle>) {}
 fn force_electromagnetic(particle: &mut Particle, n_bodies: Vec<&Particle>) {}
+// come up with expression for density at a point 
+// move particles from high density to low density
 
 fn initialize_particles() -> Vec<Particle> {
     let mut particles: Vec<Particle> = Vec::new();
-    for _ in 0..100 {
-        let mass = rand::thread_rng().gen_range(1.0..100.0);
+    for _ in 0..1000 {
+        let mass = rand::thread_rng().gen_range(1.0..MASS_EARTH);
         let position = vec![
             rand::thread_rng().gen_range(-100.0..100.0),
             rand::thread_rng().gen_range(-100.0..100.0),
@@ -155,13 +162,62 @@ fn initialize_particles() -> Vec<Particle> {
     }
     return particles;
 }
+
+fn three_dimensional_particle_plot(particles: &Vec<Particle>) {
+    let root = BitMapBackend::gif(OUT_FILE_NAME, (1024, 768), 100)
+        .unwrap()
+        .into_drawing_area();
+    root.fill(&WHITE).unwrap();
+
+    let min_x = particles.iter().map(|particle| particle.position[0]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    let max_x = particles.iter().map(|particle| particle.position[0]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    let min_y = particles.iter().map(|particle| particle.position[1]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    let max_y = particles.iter().map(|particle| particle.position[1]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    let min_z = particles.iter().map(|particle| particle.position[2]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    let max_z = particles.iter().map(|particle| particle.position[2]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    
+    let mut chart = ChartBuilder::on(&root)
+        .caption("3D Scatter Plot", ("sans-serif", 50))
+        .build_cartesian_3d(min_x..max_x, min_y..max_y, min_z..max_z)
+        .unwrap();
+
+    chart.with_projection(|mut pb| {
+        pb.yaw = 0.5;
+        pb.scale = 0.9;
+        pb.into_matrix()
+    });
+
+    chart
+        .configure_axes()
+        .draw()
+        .unwrap();
+
+    chart
+        .draw_series(
+        PointSeries::of_element(
+            particles
+                .iter()
+                .map(|particle| (particle.position[0], particle.position[1], particle.position[2])),
+            5,
+            &RED,
+            &|c, s, st| {
+                return EmptyElement::at(c)    // We want to construct a composed element on-the-fly
+                    + Circle::new((0, 0), s, st.filled()); // At this point, the new pixel coordinate is established
+                    //+ Text::new(format!("{:?}", c), (10, 0), ("sans-serif", 10).into_font());
+            },
+
+            )
+        )
+        .unwrap();
+}
 fn main() {
     let mut particles = initialize_particles();
-    let particles_original_state = particles.clone();
-    
-    for _ in 0..100 {
+
+    for _ in tqdm(0..100) {
+        let particles_prior_state = particles.clone();
         for particle in particles.iter_mut() {
-            force_gravity(particle, particles_original_state.iter().collect());
+            force_gravity(particle, particles_prior_state.iter().collect());
         }
     }
+    three_dimensional_particle_plot(&particles);
 }
