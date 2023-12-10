@@ -129,6 +129,9 @@ fn force_gravity(particle: &mut Particle, n_bodies: Vec<&Particle>) {
     particle.update_acceleration(acceleration.to_vec());
 }
 
+fn force_fluid(particle: &mut Particle, n_bodies: Vec<&Particle>) {}
+fn force_electromagnetic(particle: &mut Particle, n_bodies: Vec<&Particle>) {}
+
 fn initialize_particles() -> Vec<Particle> {
     let mut particles: Vec<Particle> = Vec::new();
     for _ in 0..100 {
