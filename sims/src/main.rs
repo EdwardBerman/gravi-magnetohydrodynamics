@@ -1,3 +1,5 @@
+use rand::Rng;
+
 const GRAVITATIONAL_CONSTANT: f64 = 6.67408e-11; // m^3 kg^-1 s^-2
 const TIME_STEP: f64 = 1.0; // s (for now)
 
@@ -117,23 +119,35 @@ fn force_gravity(particle: &mut Particle, n_bodies: Vec<&Particle>) {
     particle.update_acceleration(acceleration.to_vec());
 }
 
+fn initialize_particles() -> Vec<Particle> {
+    let mut particles: Vec<Particle> = Vec::new();
+    // Randomly initialize particles
+    for _ in 0..100 {
+        let mass = rand::thread_rng().gen_range(1.0..100.0);
+        let position = vec![
+            rand::thread_rng().gen_range(-100.0..100.0),
+            rand::thread_rng().gen_range(-100.0..100.0),
+            rand::thread_rng().gen_range(-100.0..100.0),
+        ];
+        let velocity = vec![
+            rand::thread_rng().gen_range(-100.0..100.0),
+            rand::thread_rng().gen_range(-100.0..100.0),
+            rand::thread_rng().gen_range(-100.0..100.0),
+        ];
+        let acceleration = vec![
+            rand::thread_rng().gen_range(-100.0..100.0),
+            rand::thread_rng().gen_range(-100.0..100.0),
+            rand::thread_rng().gen_range(-100.0..100.0),
+        ];
+        particles.push(Particle::new(mass, position, velocity, acceleration));
+    }
+    return particles;
+}
 fn main() {
-    let mut particle_a = Particle::new(
-        500.0,
-        vec![0.0, 0.0, 0.0],
-        vec![0.0, 0.0, 0.0],
-        vec![0.0, 0.0, 0.0],
-    );
-    let mut particle_b = Particle::new(
-        500.0,
-        vec![1.0, 1.0, 1.0],
-        vec![0.0, 0.0, 0.0],
-        vec![0.0, 0.0, 0.0],
-    );
-
-    // same loop as above but only print particle a every 10 iterations
+    let particles = initialize_particles();
+    let particle_refs: Vec<&Particle> = particles.iter().collect();
+    let mut particle_a = particles[0].clone();
     for _ in 0..500 {
-        force_gravity(&mut particle_a, vec![&particle_b]);
-        force_gravity(&mut particle_b, vec![&particle_a]);
+        force_gravity(&mut particle_a, particle_refs.clone());
     }
 }
