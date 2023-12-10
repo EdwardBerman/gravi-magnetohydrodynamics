@@ -213,7 +213,7 @@ fn three_dimensional_particle_plot(particles: &Vec<Particle>) {
 fn main() {
     let mut particles = initialize_particles();
 
-    for _ in tqdm(0..100) {
+    for _ in tqdm(0..10) {
         let particles_prior_state = particles.clone();
         for particle in particles.iter_mut() {
             force_gravity(particle, particles_prior_state.iter().collect());
